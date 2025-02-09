@@ -28,8 +28,10 @@ export async function lintDocument(this: LintServer, document: TextDocument): Pr
 
 		if (results?.length === 0 || !results?.[0]?.messages) return;
 
+		// eslint-disable-next-line complexity
 		const diagnostics = results[0].messages.map((problem) => {
 			const diagnostic = utils.makeDiagnostic(problem);
+
 			if (overrideSeverity) {
 				const mapSeverity = {
 					off: diagnostic.severity,
@@ -73,6 +75,25 @@ export async function lintDocument(this: LintServer, document: TextDocument): Pr
 				if (!edits) {
 					edits = new Map();
 					this.documentFixCache.set(uri, edits);
+				}
+
+				edits.set(utils.computeKey(diagnostic), {
+					label: `Fix this ${problem.ruleId} problem`,
+					documentVersion: document.version,
+					ruleId: problem.ruleId,
+					edit: problem.fix
+				});
+			}
+
+			if (problem.suggestions && problem.suggestions.length > 0) {
+				// handle suggestions
+				const {uri} = document;
+
+				let edits = this.documentSuggestionsCache.get(uri);
+
+				if (!edits) {
+					edits = new Map();
+					this.documentSuggestionsCache.set(uri, edits);
 				}
 
 				edits.set(utils.computeKey(diagnostic), {

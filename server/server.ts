@@ -59,6 +59,9 @@ class LintServer {
 	xoCache: Map<string, Xo>;
 	/** A mapping of document uri strings to their last calculated fixes */
 	documentFixCache: Map<string, Map<string, XoFix>>;
+	/** A mapping of document uri strings to their last calculated fixes */
+	documentSuggestionsCache: Map<string, Map<string, XoFix>>;
+
 	/** Only show resolution errors one time per session */
 	hasShownResolutionError: boolean;
 	hasReceivedShutdownRequest?: boolean;
@@ -159,6 +162,7 @@ class LintServer {
 		this.configurationCache = new Map();
 		this.foldersCache = new Map();
 		this.documentFixCache = new Map();
+		this.documentSuggestionsCache = new Map();
 
 		/** Internal state */
 		this.hasShownResolutionError = false;

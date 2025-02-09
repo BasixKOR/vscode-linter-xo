@@ -15,7 +15,8 @@ export class QuickFixCodeActionsBuilder {
 	constructor(
 		private readonly textDocument: TextDocument,
 		private readonly diagnostics: Diagnostic[],
-		private readonly fixCache: Map<string, XoFix> | undefined
+		private readonly fixCache: Map<string, XoFix> | undefined,
+		private readonly suggestionsCache: Map<string, XoFix> | undefined
 	) {}
 
 	build(): CodeAction[] {
@@ -35,6 +36,9 @@ export class QuickFixCodeActionsBuilder {
 
 				const fix = this.getFix(diagnostic, CodeActionKind.QuickFix);
 				if (fix) diagnosticCodeActions.push(fix);
+
+				const suggestions = this.getSuggestions(diagnostic);
+				if (suggestions) diagnosticCodeActions.push(suggestions);
 
 				return diagnosticCodeActions;
 			});
@@ -188,6 +192,31 @@ export class QuickFixCodeActionsBuilder {
 								this.textDocument.positionAt(edit?.edit?.range?.[1])
 							),
 							edit.edit.text || ''
+						)
+					]
+				}
+			}
+		};
+	}
+
+	getSuggestions(diagnostic: Diagnostic) {
+		const suggestions = this.suggestionsCache?.get(utils.computeKey(diagnostic));
+
+		if (!suggestions) return;
+
+		return {
+			title: `Suggest ${diagnostic.code} with XO`,
+			kind: CodeActionKind.QuickFix,
+			diagnostics: [diagnostic],
+			edit: {
+				changes: {
+					[this.textDocument.uri]: [
+						TextEdit.replace(
+							Range.create(
+								this.textDocument.positionAt(suggestions?.edit?.range?.[0]),
+								this.textDocument.positionAt(suggestions?.edit?.range?.[1])
+							),
+							suggestions.edit.text || ''
 						)
 					]
 				}

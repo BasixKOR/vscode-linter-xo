@@ -53,6 +53,49 @@ export function makeDiagnostic(problem: Linter.LintMessage): node.Diagnostic {
 	};
 }
 
+export function getSuggestionDiagnostics(problem: Linter.LintMessage): node.Diagnostic {
+	const message =
+		problem.ruleId === null ? `${problem.message}` : `${problem.message} (${problem.ruleId})`;
+
+		problem.suggestions?.forEach((suggestion) => {
+			const fix = node.TextEdit.replace(
+				{
+					start: {line: problem.line - 1, character: suggestion.fix.range[0] - 1},
+					end: {line: problem.line - 1, character: suggestion.fix.range[1] - 1}
+				},
+				suggestion.desc
+			);
+
+			const diagnostic: node.Diagnostic = {
+				message,
+				severity: node.DiagnosticSeverity.Hint,
+				code: problem.ruleId ?? '',
+				source: 'XO',
+				range: {
+					start: {line: problem.line - 1, character: suggestion.fix.start - 1},
+					end: {line: problem.line - 1, character: suggestion.fix.end - 1}
+				},
+				suggestions: [fix]
+			};
+
+			return diagnostic;
+		}
+	return {
+		message,
+		severity: node.DiagnosticSeverity.Hint,
+		code: problem.ruleId ?? '',
+		source: 'XO',
+		range: {
+			start: {line: problem.line - 1, character: problem.column - 1},
+			end: {
+				line: typeof problem.endLine === 'number' ? problem.endLine - 1 : problem.line - 1,
+				character:
+					typeof problem.endColumn === 'number' ? problem.endColumn - 1 : problem.column - 1
+			}
+		}
+	};
+}
+
 export function computeKey(diagnostic: node.Diagnostic): string {
 	const {range} = diagnostic;
 	return `[${range.start.line},${range.start.character},${range.end.line},${range.end.character}]-${
